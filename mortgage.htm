@@ -1,0 +1,251 @@
+<HTML>
+<HEAD>
+<TITLE>Mortgage Qualification Tool</TITLE>
+<META NAME="Author" CONTENT="Sandeep K. Gopisetty">
+<META NAME="Description" CONTENT="Contains Cool JavaScript Mortgate Qualification Tool">
+<META NAME="Keywords" CONTENT="JavaScript">
+<META NAME="ABSTRACT" CONTENT="IBM Corporation Employee">
+<META NAME="e-mail" CONTENT="sandeep@almaden.ibm.com">
+<META HTTP-EQUIV="pragma" CONTENT="no-cache">
+<META NAME="Security" CONTENT="Public">
+<LINK REV="MADE" HREF="mailto:sandeep@almaden.ibm.com">
+
+<SCRIPT LANGUAGE="JavaScript">
+
+<!-- hide this script tag's contents from old browsers
+
+var msg = "Calculations by this tool are believed to be accurate but is not guaranteed by either IBM or me. Any redistribution of information found at this site is strictly prohibited.";
+var separator = "    ****                    ****    ";
+var pos = 0;
+function ScrollMessage() {
+   document.DisClaimer.Text.value = msg.substring(pos, msg.length) + separator + msg.substring(0, pos);
+   pos++;
+   if (pos > msg.length) pos = 0;
+   window.setTimeout("ScrollMessage()", 200);
+}
+function LinkMessage(text) {
+   window.status = text;
+}
+
+function fixFloatFormat(input)
+{
+    var str = input.value;
+    var index = 0;
+    var newstr = 0;
+
+    for (var i = 0; i < str.length; i++) {
+        var ch = str.substring(i, i + 1)
+        if (ch == '.') {
+           index = i;
+        }
+    }
+    newstr = str.substring(0, index);
+	input.value = newstr + "." + str.substring(index+1, index+3);
+    return true;
+}
+
+function checkNumber(input, min, max, msg)
+{
+    msg = msg + " Field has Invalid Data: " + input.value;
+
+    var str = input.value;
+    for (var i = 0; i < str.length; i++) {
+        var ch = str.substring(i, i + 1)
+        if ((ch < "0" || "9" < ch) && ch != '.') {
+            alert(msg);
+            return false;
+        }
+    }
+    var num = 0 + str
+    if (num < min || max < num) {
+        alert(msg + " not in range [" + min + ".." + max + "]");
+        return false;
+    }
+    input.value = str;
+    return true;
+}
+
+function computeField(input)
+{
+    if (input.value != null && input.value.length != 0)
+        input.value = "" + eval(input.value);
+    computeMortgagePayments(input.form);
+}
+
+function computeMortgagePayments(form)
+{
+    if ((form.mortAmt.value == null || form.mortAmt.value.length == 0) ||
+        (form.numYears.value == null || form.numYears.value.length == 0) ||
+        (form.propTax.value == null || form.propTax.value.length == 0) ||
+        (form.debt.value == null || form.debt.value.length == 0) ||
+        (form.mortRate.value == null || form.mortRate.value.length == 0)) {
+        return;
+    }
+
+    if (!checkNumber(form.mortAmt, 1, 10000000, "Mortgage Amount") ||
+		!checkNumber(form.numYears, 1, 50, "Number of Years") ||
+		!checkNumber(form.mortRate, 0, 99.99, "Mortgage Rate") ||
+		!checkNumber(form.debt, 0, 1000000, "Debt.") ||
+        !checkNumber(form.propTax, 0, 100000, "Property Tax")) {
+        form.mortPay.value = "Invalid";
+        form.totalPay.value = "Invalid";
+        form.reqdSal.value = "Invalid";
+        return;
+    }
+	var mortgage = form.mortAmt.value;
+	var yrTime = form.numYears.value;
+	var yrRate = form.mortRate.value;
+	var yrTax = form.propTax.value;
+	var yrDebt = form.debt.value;
+	var yrSalary = 0;
+
+	var monTax      = yrTax/12;
+	var monDebt     = yrDebt/12.0;
+    var rate        = yrRate/1200.00;
+    var monTime     = yrTime * 12.0;
+    var poly        = (1.0 + rate);
+    for (i=1; i < monTime; i++) {
+        poly = poly * (1.0 + rate);
+    }
+    var monPayment  = mortgage * poly * rate / (poly - 1.0);
+    var monTotal    = monPayment + monTax + monDebt;
+    var mon28       = (monPayment + monTax) / .28;
+    var mon35       = monTotal / .35;
+
+    if (mon28 > mon35) {
+		yrSalary = 12 * mon28;
+    } else {
+		yrSalary = 12 * mon35;
+    }
+    var principal = 0.0;
+    var interest = 0.0;
+    for (i = 1; i < monTime; i++) {
+       interest = interest + (principal * rate);
+       principal = (principal + monPayment)/(1.0 + rate);
+    }
+    form.mortPay.value = Math.floor(100 * monPayment)/100;
+	form.totalPay.value = Math.floor(100 * monTotal)/100;
+    form.reqdSal.value = Math.floor(100 * yrSalary)/100;
+}
+
+function clearForm(form)
+{
+    form.mortAmt.value = "";
+    form.numYears.value = "";
+    form.propTax.value = "";
+    form.debt.value = "";
+    form.mortRate.value = "";
+    form.mortPay.value = "";
+    form.totalPay.value = "";
+    form.reqdSal.value = "";;
+}
+
+<!-- done hiding from old browsers -->
+
+</SCRIPT>
+</HEAD>
+<BODY BODY BGCOLOR=WHITE TEXT="#000090" LINK="#900000" ALINK="#FFFF00" VLINK="#000000" onLoad = "ScrollMessage();">
+
+<H1>Mortgage Qualification Tool</H1>
+<FONT SIZE=4>
+Note, the required salary must meet the following two conditions:
+<ol>
+<li> the monthly salary must be greater than 28%
+of the sum of the monthly mortgage and monthly tax payments.
+<li> the monthly salary must be greater than 35%
+of the sum of the monthly mortgage, monthly tax and other monthly
+debt payments. 
+</ol>
+
+<CENTER>
+
+<FORM method=POST>
+<TABLE BORDER=4 CELLPADDING=2>
+<TR>
+<TD><DIV ALIGN=CENTER>Desired <br>Mortgage</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=mortAmt SIZE=9 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Desired Mortgage for new home</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>Years of<br> Mortgage</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=numYears  SIZE=9 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Total Number of Years on Mortgage</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>Yearly <br>Mortgage Rate (%)</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=mortRate  SIZE=9 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#900000">Interest Percentage of Mortgage</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>Yearly Property<br>Taxes</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=propTax  SIZE=9 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Property Taxes on your new Home</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>  Other Debt.</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=debt  SIZE=9 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Other Yearly Debt <br>(School, Car, ...)</FONT></DIV></TD>
+</TR><TR>
+<TD><B><ALIGN=CENTER><FONT COLOR="#0000FF"><INPUT TYPE="button" VALUE="Compute"   onClick=computeMortgagePayments(this.form)></FONT></B> </TD>
+<TD></TD>
+<TD><ALIGN=CENTER><B><FONT COLOR="#0000FF"><INPUT TYPE="reset"  VALUE="Reset"     onClick=clearForm(this.form)> </B></FONT></TD>
+</TR>
+</TR><TR>
+<TD></TD>
+<TD><DIV ALIGN=CENTER> <B><FONT COLOR="#FF0000">Summary</FONT></B> </DIV></TD>
+<TD></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER> <B>Mortgage <br>Payments</B> </DIV></TD>
+<TD><DIV ALIGN=CENTER> <B>Total <br>Payments</B> </DIV></TD>
+<TD><DIV ALIGN=CENTER> <B>Required <br> Salary</B> </DIV></TD>
+</TR><TR>
+<TD><INPUT TYPE=TEXT NAME=mortPay  SIZE=9 onChange=computeMortgagePayments(this)> </TD>
+<TD><INPUT TYPE=TEXT NAME=totalPay  SIZE=9 onChange=computeMortgagePayments(this)> </TD>
+<TD><INPUT TYPE=TEXT NAME=reqdSal  SIZE=20 onChange=computeMortgagePayments(this)> </TD>
+</TR><TR>
+</FORM>
+</TABLE>
+
+</CENTER>
+<hr>
+<FONT SIZE=3>
+If you have found this tool useful try the <BLINK><A HREF="loan.html">Mortgage Calculator Tool</A></BLINK> too.
+</FONT>
+
+</font>
+
+<hr>
+<h5> DISCLAIMER </h5>
+<CENTER>
+<TABLE>
+<TD ALIGN=CENTER>
+<FORM name="DisClaimer">
+<INPUT TYPE="text" name="Text" SIZE="55">
+</FORM>
+</TD>
+</TABLE>
+</CENTER>
+
+<hr>
+<h2>For comments and questions:</h2>
+<ul>
+<li> You may send e-mail to <A HREF=
+"mailto:sandeep@almaden.ibm.com">sandeep@almaden.ibm.com</A>
+</ul>
+<P>
+Last updated <!--webbot bot="Timestamp" S-Type="EDITED" S-Format="%B %d, %Y" startspan -->March 03, 2000<!--webbot bot="Timestamp" endspan i-checksum="16803" -->
+<br>
+
+<hr>
+
+<table border="0" cellpadding="0" cellspacing="10" width="100%">
+  <tr>
+    <td width="16%" bgcolor="#FFFFFF"><a href="http://www.almaden.ibm.com/cs/people/sandeep"><font size="2"
+    face="Arial"><strong>Home</strong></font></a></td>
+    <td width="16%" bgcolor="#FFFFFF"><a href="research.html"><font
+    size="2" face="Arial"><strong>Research</strong></font></a></td>
+    <td width="17%" bgcolor="#FFFFFF"><a href="javascript.html"><font
+    size="2" face="Arial"><strong>JavaScript Tools</strong></font></a><font size="1"
+    face="Arial">.</font></td>
+  </tr>
+</table>
+
+</BODY>
+</HTML>
+

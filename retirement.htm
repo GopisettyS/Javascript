@@ -1,0 +1,452 @@
+<HTML>
+<HEAD>
+<TITLE>Retirement Calculator</TITLE>
+<META NAME="Author" CONTENT="Sandeep K. Gopisetty">
+<META NAME="Description" CONTENT="Contains Cool Retirement Calculator Tool">
+<META NAME="Keywords" CONTENT="JavaScript">
+<META NAME="ABSTRACT" CONTENT="IBM Corporation Employee">
+<META NAME="e-mail" CONTENT="sandeep@almaden.ibm.com">
+<META HTTP-EQUIV="pragma" CONTENT="no-cache">
+<META NAME="Security" CONTENT="Public">
+<LINK REV="MADE" HREF="mailto:sandeep@almaden.ibm.com">
+
+<SCRIPT LANGUAGE="JavaScript">
+<!-- One of the First JavaScripts on the Web by Sandeep Gopisetty (sandeep@almaden.ibm.com)
+
+var msg = "Calculations by this tool are believed to be accurate but is not guaranteed by either IBM or me. Any redistribution of information found at this site is strictly prohibited.";
+var separator = "    ****                    ****    ";
+var pos = 0;
+function ScrollMessage() {
+   document.DisClaimer.Text.value = msg.substring(pos, msg.length) + separator + msg.substring(0, pos);
+   pos++;
+   if (pos > msg.length) pos = 0;
+   window.setTimeout("ScrollMessage()", 200);
+}
+
+function LinkMessage(text) {
+   window.status = text;
+}
+
+function checkYear(input)
+{
+	if ( (input.value == "") || (input.value.length < 4) || (input.value.length > 4) )
+	{
+		alert("Please enter the \"Current Year\"");
+		input.currentYear.focus();
+		return (false);
+	}
+	var checkOK = "0123456789";
+	var checkStr = input.value;
+	var allValid = true;
+	for (i = 0; i < checkStr.length; i++)
+	{
+		ch = checkStr.charAt(i);
+		for (j = 0; j < checkOK.length; j++)
+		{
+			if (ch == checkOK.charAt(j) ) {
+				break;
+			}
+			if (j == checkOK.length) {
+				allValid = false;
+				break;
+			}
+			allNum += ch;
+		}
+		if (!allValid) {
+			alert("Please enter the \"Current Year\"");
+			input.focus();
+			return (false);
+		}
+	}
+}
+
+function checkInputYear(form)
+{
+    if ((form.currentYear.value == null || form.currentYear.value.length == 0) ) {
+        return;
+    }
+
+    if ( !checkNumber(form.currentYear, 1999, 2020, "Input Year") )  {
+        form.currentYear.value = "1999";
+        return;
+    }
+}
+
+function checkRetirementYear(input)
+{
+    form = input.form;
+    if ((form.retirementYear.value == null || form.retirementYear.value.length == 0) ) {
+        return;
+    }
+
+    if ( !checkNumber(form.retirementYear, parseInt(form.currentYear.value), 2100, "Input Year") )  {
+        form.retirementYear.value = "2060";
+        computeWorkingYears(input);
+        return;
+    }
+    computeWorkingYears(input);
+}
+
+function checkCurrentYear(input)
+{
+    if (input.value != null && input.value.length != 0)
+        input.value = "" + eval(input.value);
+    checkInputYear(input.form);
+}
+
+// Check for the validity of the input String
+function checkNumber(input, min, max, msg)
+{
+    msg = msg + " Field has Invalid Data: " + input.value;
+
+    var str = input.value;
+    for (var i = 0; i < str.length; i++) {
+        var ch = str.substring(i, i + 1)
+        if ((ch < "0" || "9" < ch) && ch != '.') {
+            alert(msg);
+            return false;
+        }
+    }
+    // var num = 0 + str -> This has been fixed.
+	var num = parseFloat(str)
+    if (num < min || max < num) {
+        alert(msg + " not in range [" + min + ".." + max + "]");
+        return false;
+    }
+    input.value = str;
+    return true;
+}
+
+function computeWorkingYears(input)
+{
+    if (input.value != null && input.value.length != 0)
+        input.value = "" + eval(input.value);
+    computeTotalYears(input.form);
+}
+
+function computeTotalYears(form)
+{
+    if ( (form.currentYear.value == null || form.currentYear.value.length == 0) ||
+         (form.retirementYear.value == null || form.retirementYear.value.length == 0) ) {
+        return;
+    }
+
+    form.numberOfWorkingYears.value = form.retirementYear.value - form.currentYear.value;
+}
+
+function computeForm(form)
+{
+    // defaultStatus = "Please be patient when you select 'Compute Detail'";
+    var savings = form.savings.value;
+    var investRate = 1 + (0.01 * eval(form.investmentGain.value));
+    var target = form.target.value;
+    var inflation = 1 + (0.01 * eval(form.inflationRate.value));
+    var save = form.annualSavings.value;
+    var retire = form.retirementYear.value;
+	var socsec = form.socialSecurity.value;
+	var annuity = form.annuity.value;
+	var currentYear = form.currentYear.value;
+	var lumpSum = form.lumpSum.value;
+	var yearsOfRetirement = form.yearsOfRetirement.value;
+	var income = 0;
+	var withdraw = 0;
+	var death = 0;
+	var doc = parent.document;
+	
+	death = eval(retire) + eval(yearsOfRetirement);
+	
+	doc.write("<HTML>");
+	doc.write("<div align=\"center\">");
+  	doc.write("<center>");
+  	doc.write("<H2><Center>Working Years</Center></H2>");
+  	doc.write("<table border=\"3\" width=\"100%\" cellpadding=\"2\" cellspacing=\"4\">");
+    doc.write("<tr>");
+      doc.write("<td width=\"25%\" align=\"center\">");
+        doc.write("<h5><b><font color=\"#008080\">Year</font></b></h5>");
+      doc.write("</td>");
+      doc.write("<td width=\"25%\" align=\"center\">");
+        doc.write("<h5><b><font color=\"#008080\">Savings</font></b></h5>");
+      doc.write("</td>");
+      doc.write("<td width=\"25%\" align=\"center\">");
+        doc.write("<h5><b><font color=\"#008080\">Annual Savings</font></b></h5>");
+        doc.write("</td>");
+      doc.write("<td width=\"25%\" align=\"center\">");
+        doc.write("<h5><b><font color=\"#008080\">Target</font></b></h5>");
+      doc.write("</td>");
+    doc.write("</tr>");
+    doc.write("<tr>");
+      doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", currentYear, "</font></td>");
+      doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", Math.floor(100 * savings)/100, "</font></td>");
+      doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", Math.floor(100 * save)/100, "</font></td>");
+      doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", Math.floor(100 * target)/100, "</font></td>");
+    doc.write("</tr>");
+    for ( i = eval(currentYear)+1; i < retire; i++ ) {
+	   savings = (eval(savings) * eval(investRate)) + eval(save);
+	   target *= eval(inflation);
+	   save *= eval(inflation);
+	   if ( i == retire-1 ) {
+			save += eval(lumpSum);
+		}
+		doc.write("<tr>");
+      		doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", i, "</font></td>");
+      		doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", Math.floor(100 * savings)/100, "</font></td>");
+      		doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", Math.floor(100 * save)/100, "</font></td>");
+      		doc.write("<td width=\"25%\" align=\"center\"><font color=\"#0000FF\">", Math.floor(100 * target)/100, "</font></td>");
+    	doc.write("</tr>");
+    }
+    doc.write("</tr>");
+    doc.write("</table>");
+    doc.write("</center>");
+    doc.write("</div>");
+
+	savings = (eval(savings) * eval(investRate)) + eval(save);
+	target *= eval(inflation);
+
+	doc.write("<div align=\"center\">");
+	doc.write("<center>");
+	doc.write("<table border=\"3\" cellpadding=\"2\" cellspacing=\"4\" width=\"100%\">");
+	doc.write("<tr>");
+	doc.write("<td width=\"20%\" align=\"center\">");
+	doc.write("<h5><b><font color=\"#008080\">Year</font></b></h5>");
+	doc.write("</td>");
+	doc.write("<td width=\"20%\" align=\"center\">");
+	doc.write("<h5><b><font color=\"#008080\">Savings</font></b></h5>");
+	doc.write("</td>");
+	doc.write("<td width=\"20%\" align=\"center\">");
+	doc.write("<h5><font color=\"#800000\">Withdraw</font></h5>");
+	doc.write("</td>");
+	doc.write("<td width=\"20%\" align=\"center\">");
+	doc.write("<h5><font color=\"#008080\">Pre-Tax Income Target</font></h5>");
+	doc.write("</td>");
+	doc.write("<td width=\"20%\" align=\"center\">");
+	doc.write("<h5><font color=\"#008080\">Income from Soc. Sec. and Annuity</font></h5>");
+	doc.write("</td>");
+	doc.write("</tr>");	
+
+	doc.write("<h2>Retirement Years</h2>");
+
+   // compute what happens in retirement
+   for ( j = retire; j <= death; j++ ) {
+      income = eval(socsec) + eval(annuity);
+      withdraw = eval(target) - eval(income);
+
+      doc.write("<tr>");
+      doc.write("<td width=\"20%\" align=\"center\"><b><font color=\"#008000\">", j, "</font></b></td>");
+      doc.write("<td width=\"20%\" align=\"center\"><b><font color=\"#008000\">", Math.floor(100 * savings)/100, "</font></b></td>");
+      doc.write("<td width=\"20%\" align=\"center\"><b><font color=\"#800000\">", Math.floor(100 * withdraw)/100, "</font></b></td>");
+      doc.write("<td width=\"20%\" align=\"center\"><b><font color=\"#008000\">", Math.floor(100 * target)/100, "</font></b></td>");
+      doc.write("<td width=\"20%\" align=\"center\"><b><font color=\"#008000\">", Math.floor(100 * income)/100, "</font></b></td>");
+      doc.write("</tr>");
+      
+      // what does savings grow to?
+      savings = (eval(savings) - eval(withdraw)) * eval(investRate);
+
+      // update socsec income and spending target
+      socsec *= eval(inflation);
+      target *= eval(inflation);
+      
+   }
+   doc.write("</table>");
+	doc.write("</center>");
+	doc.write("</div>");
+	doc.close();
+	//form.summaryOne.value = savings;
+	//form.summaryTwo.value = save;
+	//form.summaryThree.value = target;
+}
+
+
+function clearForm(input)
+{
+    //form = input.form;
+    form.currentYear.value = "";
+    form.retirementYear.value = "";
+    form.numberOfWorkingYears.value = "";
+    form.yearsOfRetirement.value = "";
+    form.savings.value = "";
+    form.annualSavings.value = "";
+    form.target.value = "";
+    form.socialSecurity.value = "";
+    form.lumpSum.value = "";
+    form.annuity.value = "";
+    form.investmentGain.value = "";
+    form.inflationRate.value = "";
+}
+
+<!-- done hiding from old browsers -->
+</SCRIPT>
+
+</HEAD>
+<BODY BODY BGCOLOR=WHITE TEXT="#000090" LINK="#900000" ALINK="#FFFF00" VLINK="#000000" onLoad = "ScrollMessage();">
+<H1>Retirement Calculator</H1>
+
+<FONT SIZE=3>
+Here is a <FONT COLOR="#0000FF"><i>cool</i></FONT> tool to let you determine
+your lifestyle when you retire.
+<BR>
+<h4><A HREF="http://www.ibm.com/privacy/yourprivacy/"><STRONG>Your Privacy</STRONG></A> explains haw we protect your personal information.<P></FONT></h4>
+<BR>
+
+
+<CENTER>
+
+<FORM method=POST>
+<TABLE BORDER=4 CELLPADDING=2 width="760">
+<TR>
+<TD width="182"><DIV ALIGN=CENTER><b>Current Year</b></DIV></TD>
+<TD width="140"><INPUT NAME=currentYear SIZE=10 onChange=checkCurrentYear(this) maxlength="4"> </TD>
+
+</CENTER>
+<TD width="396"><DIV ALIGN=LEFT>
+    <p align="left"><font color="#008800">Please enter the current year</font></DIV></TD>
+</TR>
+
+
+<CENTER>
+
+<TR>
+<TD width="182"><DIV ALIGN=CENTER><b>Retirement Year</b></DIV></TD>
+<TD width="140"><INPUT NAME=retirementYear  SIZE=10 onChange=checkRetirementYear(this) maxlength="4"> </TD>
+<TD width="396"><DIV ALIGN=LEFT><font color="#008800">Please enter the year you wish to retire</font></DIV></TD>
+</TR><TR>
+<TD align="left" width="182">
+
+<FONT SIZE=3>
+<DIV ALIGN=CENTER> <b><font color="#800000">Number of&nbsp;</font></b></DIV><DIV ALIGN=CENTER> <b><font color="#800000">Working Years</font></b></DIV>
+
+</font>
+
+</TD>
+
+</CENTER>
+<TD align="left" width="140">
+
+<p align="left">
+
+<FONT SIZE=3>
+<INPUT NAME=numberOfWorkingYears  SIZE=10 onChange=checkYear(this) > 
+
+</font>
+
+</p>
+
+ </TD>
+
+<TD align="left" width="396">
+  <p align="left"><font color="#900000">Total Number of Working Years</font></TD>
+</TR>
+
+
+<CENTER>
+
+<TR>
+<TD width="182"><DIV ALIGN=CENTER><b>Years of Retirement</b></DIV></TD>
+<TD width="140"><INPUT NAME=yearsOfRetirement  SIZE=10 maxlength="3"> </TD>
+<TD width="396"><DIV ALIGN=LEFT><font color="#008000">How long do you expect to enjoy
+    retirement?</font></DIV></TD>
+</TR><TR>
+<TD width="182"><DIV ALIGN=CENTER><b>Savings</b></DIV></TD>
+<TD width="140"><INPUT NAME=savings  SIZE=10 > </TD>
+<TD width="396"><DIV ALIGN=LEFT><font color="#008800">Your Current Savings in today's
+    dollars</font></DIV></TD>
+</TR><TR>
+<TD width="182"><DIV ALIGN=CENTER>  <b>Annual Savings</b></DIV></TD>
+<TD width="140"><INPUT NAME=annualSavings  SIZE=10 > </TD>
+<TD width="396"><DIV ALIGN=LEFT><font color="#008800">Amount of Money you expect to save
+    every year</font></DIV><DIV ALIGN=LEFT><font color="#008800">in today's
+    dollars</font></DIV></TD>
+</TR><TR>
+<TD width="182"><DIV ALIGN=CENTER> <b>Target Pre-Tax&nbsp;</b></DIV><DIV ALIGN=CENTER> <b>Income</b></DIV></TD>
+<TD width="140"><INPUT NAME=target   SIZE=10 > </TD>
+<TD width="396"><DIV ALIGN=LEFT><font color="#008000">Please enter your target pre-tax
+    income in today's dollars</font></DIV></TD>
+</TR><TR>
+<TD width="182"><DIV ALIGN=CENTER><b>Social Security</b></DIV><DIV ALIGN=CENTER><b>Benefit</b></DIV></TD>
+<TD width="140"><INPUT NAME=socialSecurity  SIZE=10 > </TD>
+<TD width="396"><DIV ALIGN=LEFT><font color="#008800">Please enter the amount of social
+    security benefit in today's dollars</font></DIV></TD>
+</TR><TR>
+<TD width="182">
+  <p align="center"><b>Lump sum</b></TD>
+<TD width="140">
+
+<FONT SIZE=3>
+<INPUT NAME=lumpSum  SIZE=10 > </font> </TD>
+<TD width="396"><font color="#008800">Enter Lump sum available at retirement</font></TD>
+</TR><TR>
+<TD width="182">
+  <p align="center"><b>Annual Annuity</b></TD>
+<TD width="140">
+
+<FONT SIZE=3>
+<INPUT NAME=annuity  SIZE=10 > </font> </TD>
+<TD width="396"><font color="#008800">Please enter pension amount</font></TD>
+</TR><TR>
+<TD width="182">
+  <p align="center"><b>Annual Investment Gain %</b></TD>
+<TD width="140">
+
+<FONT SIZE=3>
+<INPUT NAME=investmentGain  SIZE=10 > </font> </TD>
+<TD width="396"><font color="#008800">Please enter the expected annual rate of gain on your investment</font></TD>
+</TR><TR>
+<TD width="182"><DIV ALIGN=CENTER> <b> Inflation <br>%age</b> </DIV></TD>
+<TD width="140"><INPUT NAME=inflationRate  SIZE=10 > </TD>
+<TD width="396"><DIV ALIGN=LEFT><FONT COLOR="#008800">Estimated Inflation Rate.</FONT></DIV></TD>
+</TR>
+<TR>
+<th colspan="1" width="182"><FONT COLOR="#0000FF"><tt><INPUT TYPE="button" VALUE="Compute" onClick=computeForm(this.form)></tt></FONT>
+<th colspan="2" width="536">&nbsp;
+</TR>
+
+</font>
+
+</CENTER>
+
+
+<CENTER>
+
+<FONT SIZE=3>
+
+<FONT SIZE=3>
+<TR>
+</FORM>
+</TABLE>
+
+</CENTER>
+<hr>
+<FONT SIZE=3>
+If you have found this tool useful try the <BLINK><A HREF="mortgage.html">Mortgage Qualification Tool</A></BLINK> too.
+</FONT>
+
+</font>
+
+<hr>
+<h5> DISCLAIMER </h5>
+<CENTER>
+<TABLE>
+<TD ALIGN=CENTER>
+<FORM name="DisClaimer">
+<INPUT TYPE="text" name="Text" SIZE="55">
+</FORM>
+</TD>
+</TABLE>
+</CENTER>
+
+<hr>
+
+<table border="0" cellpadding="0" cellspacing="10" width="100%">
+  <tr>
+    <td width="16%" bgcolor="#FFFFFF"><a href="http://www.almaden.ibm.com/cs/people/sandeep"><font size="2"
+    face="Arial"><strong>Home</strong></font></a></td>
+    <td width="16%" bgcolor="#FFFFFF"><a href="research.htm"><font
+    size="2" face="Arial"><strong>Research</strong></font></a></td>
+    <td width="17%" bgcolor="#FFFFFF"><a href="javascript.html"><font
+    size="2" face="Arial"><strong>JavaScript Tools</strong></font></a><font size="1"
+    face="Arial">.</font></td>
+  </tr>
+</table>
+
+</BODY>
+</HTML>
+

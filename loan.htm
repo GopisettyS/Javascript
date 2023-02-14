@@ -1,0 +1,449 @@
+<HTML>
+<HEAD>
+<TITLE>Mortgage Interest Calculator</TITLE>
+<META NAME="Author" CONTENT="Sandeep K. Gopisetty">
+<META NAME="Description" CONTENT="Contains Cool JavaScript Mortgate Interest Calculator Tool">
+<META NAME="Keywords" CONTENT="JavaScript">
+<META NAME="ABSTRACT" CONTENT="IBM Corporation Employee">
+<META NAME="e-mail" CONTENT="sandeep@almaden.ibm.com">
+<META HTTP-EQUIV="pragma" CONTENT="no-cache">
+<META NAME="Security" CONTENT="Public">
+<LINK REV="MADE" HREF="mailto:sandeep@almaden.ibm.com">
+
+<SCRIPT LANGUAGE="JavaScript">
+<!-- One of the First JavaScripts on the Web by Sandeep Gopisetty (sandeep@almaden.ibm.com)
+
+var msg = "Calculations by this tool are believed to be accurate but is not guaranteed by either IBM or me. Any redistribution of information found at this site is strictly prohibited.";
+var separator = "    ****                    ****    ";
+var pos = 0;
+function ScrollMessage() {
+   document.DisClaimer.Text.value = msg.substring(pos, msg.length) + separator + msg.substring(0, pos);
+   pos++;
+   if (pos > msg.length) pos = 0;
+   window.setTimeout("ScrollMessage()", 200);
+}
+function LinkMessage(text) {
+   window.status = text;
+}
+
+// JavaScript handling of the floats is poor - Fix it
+function fixFloatFormat(input)
+{
+    var str = input.value;
+    var index = 0;
+    var newstr = 0;
+
+    for (var i = 0; i < str.length; i++) {
+        var ch = str.substring(i, i + 1)
+        if (ch == '.') {
+           index = i;
+        }
+    }
+    newstr = str.substring(0, index);
+	input.value = newstr + "." + str.substring(index+1, index+3);
+    return true;
+}
+
+// Check for the validity of the input String
+function checkNumber(input, min, max, msg)
+{
+    msg = msg + " Field has Invalid Data: " + input.value;
+
+    var str = input.value;
+    for (var i = 0; i < str.length; i++) {
+        var ch = str.substring(i, i + 1)
+        if ((ch < "0" || "9" < ch) && ch != '.') {
+            alert(msg);
+            return false;
+        }
+    }
+    // var num = 0 + str -> This has been fixed.
+	var num = parseFloat(str)
+    if (num < min || max < num) {
+        alert(msg + " not in range [" + min + ".." + max + "]");
+        return false;
+    }
+    input.value = str;
+    return true;
+}
+
+// Supplementary function to compute loan
+function computeLoan(input)
+{
+    if (input.value != null && input.value.length != 0)
+        input.value = "" + eval(input.value);
+    computeLoanBalance(input.form);
+}
+
+function computeAll(input)
+{
+    if (input.value != null && input.value.length != 0)
+        input.value = "" + eval(input.value);
+    computeForm(input.form);
+}
+
+function computeField(input)
+{
+    if (input.value != null && input.value.length != 0)
+        input.value = "" + eval(input.value);
+    computeMonthlyPay(input.form);
+}
+
+function computeLoanBalance(form)
+{
+    if ((form.salePrice.value == null || form.salePrice.value.length == 0) ||
+        (form.Down.value == null || form.Down.value.length == 0)) {
+        return;
+    }
+
+    if (!checkNumber(form.Down, 0, 99, "Down Payment") ||
+        !checkNumber(form.salePrice, 1, 10000000, "Sale Price")) {
+        form.salePrice.value = "Invalid";
+        return;
+    }
+
+    var i = form.Down.value;
+
+    form.loanBalance.value = form.salePrice.value - (i/100 * form.salePrice.value);
+}
+
+function computeDetail(form)
+{
+    if ((form.loanBalance.value == null || form.loanBalance.value.length == 0) ||
+        (form.marginalInterestRate.value == null || form.marginalInterestRate.value.length == 0)) {
+        return;
+    }
+
+    if (!checkNumber(form.payments, 1, 1200, "# of payments") ||
+        !checkNumber(form.interest, 0, 99, "Interest") ||
+        !checkNumber(form.marginalInterestRate, 0, 99.999, "Marginal Tax Rate") ||
+        !checkNumber(form.loanBalance, 1, 10000000, "Principal")) {
+        form.monthlypay.value = "Invalid";
+        return;
+    }
+
+    var i = form.interest.value;
+    if (i > 1.0) {
+        i = i / 100.0;
+        form.interest.value = i;
+    }
+    i /= 12;
+
+    var rate = form.interest.value;
+    rate = i;
+
+    var taxrate = form.marginalInterestRate.value;
+    taxrate = 1.0 - taxrate/100.0;
+    var inflate = form.inflationRate.value;
+    inflate = 1.0 - inflate/1200.0;
+
+    var deflate = 1.0;
+    var cumint = 0.0;
+    var cumreal = 0.0;
+    var cumpay = 0.0;
+    var interest = 0.0;
+    var balance = form.loanBalance.value;
+    var payment = form.monthlypay.value;
+    var realpay = 0.0;
+    var cumrawpay = 0.0;
+    var defint = 0.0;
+    var cumdefint = 0.0; /* cum tax adjusted deflated int */
+    var cumtaxpay = 0.0; /* cumulative tax adjusted payments */
+    
+    cumrawpay = payment * form.payments.value;
+	 var doc = parent.document;
+	 doc.open("text/html");
+	 doc.write("<HTML><HEAD>");
+	 doc.write("This page was generated at "+Date()+"");
+	 doc.write("<TITLE> Detailed History </TITLE>");
+	 doc.write("</HEAD>");
+	 doc.write("<BODY BGCOLOR=ANTIQUEWHITE TEXT=TEAL>");
+	 doc.write("<TABLE BORDER=3 CELLPADDING=1><TR><TH>Payment #</TH><TH>Balance Owed <br>Before Payment</TH><TH>Interest Paid</TH> <TH>Principal Paid</TH><TH>Cumulative <br>Interest Paid</TH><TH>Tax Adjusted <br>Interest Paid</TH><TH>Cumulative<br>Tax Adjusted<br>Interest</TH><TH>Deflated<br>Tax<br>Adjusted<br>Payments</TH><TH>Cumulative Deflated <br>Tax Adjusted<br>Payments</TH></TR>");
+	var num = 0;
+    for ( ; balance > 0.0; balance = balance - principal ) {
+        interest = balance * rate;
+		var iInterest = Math.floor(100 * interest)/100;
+        principal = payment - interest;
+        if ( principal > balance ) principal = balance;
+		var iBalance = Math.floor(100 * balance)/100;
+		var iPrincipal = Math.floor(100 * principal)/100;
+        cumint = cumint + interest;
+		var iCumInt = Math.floor(100 * cumint)/100;
+        realint = taxrate * interest;
+		var iRealInt = Math.floor(100 * realint)/100;
+        cumreal = cumreal + realint;
+		var iCumReal = Math.floor(100 * cumreal)/100;
+        deflate = deflate * inflate;
+        defint = deflate * realint;
+        cumdefint = cumdefint + defint;
+        cumtaxpay = cumtaxpay + principal + realint;
+        realpay = (principal + realint) * deflate;
+		var iRealPay = Math.floor(100 * realpay)/100;
+        cumpay = cumpay + realpay;
+		var iCumPay = Math.floor(100 * cumpay)/100;
+		num = num + 1;
+		doc.write("<TR><TH>",num,"</TH><TH>", iBalance, "</TH><TH>", iInterest, "</TH><TH>", iPrincipal, "</TH><TH>", iCumInt, "</TH><TH>", iRealInt, "</TH><TH>", iCumReal, "</TH><TH>", iRealPay, "</TH><TH>", iCumPay, "</TH></TR>");
+    }
+    // form.cumInterest.value = cumint;
+    // form.taxAdjInterest.value = cumreal;
+    // form.deftaxAdjInterest.value = cumdefint;
+    // form.realPayments.value = cumrawpay;
+    // form.taxAdjPayments.value = cumtaxpay;
+    // form.cumAdjPayments.value = cumpay;
+	 doc.write("<TR><TH>Payment #</TH><TH>Balance Owed <br>Before Payment</TH><TH>Interest Paid</TH> <TH>Principal Paid</TH><TH>Cumulative <br>Interest Paid</TH><TH>Tax Adjusted <br>Interest Paid</TH><TH>Cumulative<br>Tax Adjusted<br>Interest</TH><TH>Deflated<br>Tax<br>Adjusted<br>Payments</TH><TH>Cumulative Deflated <br>Tax Adjusted<br>Payments</TH></TR>");
+	doc.write("</TABLE>");
+	doc.write("This page was generated at "+Date()+"");
+	doc.write("<HR></BODY></HTML>");
+	doc.close();
+	defaultStatus = "Done!";
+	return;
+}
+
+function computeForm(form)
+{
+    defaultStatus = "Please be patient when you select 'Compute Detail'";
+    if ((form.loanBalance.value == null || form.loanBalance.value.length == 0) ||
+        (form.marginalInterestRate.value == null || form.marginalInterestRate.value.length == 0)) {
+        return;
+    }
+
+    if (!checkNumber(form.payments, 1, 1200, "# of payments") ||
+        !checkNumber(form.interest, 0, 99, "Interest") ||
+        !checkNumber(form.marginalInterestRate, 0, 99.999, "Marginal Tax Rate") ||
+        !checkNumber(form.loanBalance, 1, 10000000, "Principal")) {
+        form.monthlypay.value = "Invalid";
+        return;
+    }
+
+    var i = form.interest.value;
+    if (i > 1.0) {
+        i = i / 100.0;
+        form.interest.value = i;
+    }
+    i /= 12;
+
+    var rate = form.interest.value;
+    rate = i;
+
+    var taxrate = form.marginalInterestRate.value;
+    taxrate = 1.0 - taxrate/100.0;
+    var inflate = form.inflationRate.value;
+    inflate = 1.0 - inflate/1200.0;
+
+    var deflate = 1.0;
+    var cumint = 0.0;
+    var cumreal = 0.0;
+    var cumpay = 0.0;
+    var interest = 0.0;
+    var balance = form.loanBalance.value;
+    var payment = form.monthlypay.value;
+    var realpay = 0.0;
+    var cumrawpay = 0.0;
+    var defint = 0.0;
+    var cumdefint = 0.0; /* cum tax adjusted deflated int */
+    var cumtaxpay = 0.0; /* cumulative tax adjusted payments */
+    
+    cumrawpay = payment * form.payments.value;
+    for ( ; balance > 0.0; balance = balance - principal ) {
+        interest = balance * rate;
+        principal = payment - interest;
+        if ( principal > balance ) principal = balance;
+        cumint = cumint + interest;
+        realint = taxrate * interest;
+        cumreal = cumreal + realint;
+        deflate = deflate * inflate;
+        defint = deflate * realint;
+        cumdefint = cumdefint + defint;
+        cumtaxpay = cumtaxpay + principal + realint;
+        realpay = (principal + realint) * deflate;
+        cumpay = cumpay + realpay;
+    }
+    form.cumInterest.value = Math.floor(100 * cumint)/100;
+    form.taxAdjInterest.value = Math.floor(100 * cumreal)/100;
+    form.deftaxAdjInterest.value = Math.floor(100 * cumdefint)/100;
+    form.realPayments.value = Math.floor(100 * cumrawpay)/100;
+    form.taxAdjPayments.value = Math.floor(100 * cumtaxpay)/100;
+    form.cumAdjPayments.value = Math.floor(100 * cumpay)/100;
+}
+
+function computeMonthlyPay(form)
+{
+    if ((form.payments.value == null || form.payments.value.length == 0) ||
+        (form.interest.value == null || form.interest.value.length == 0) ||
+        (form.loanBalance.value == null || form.loanBalance.value.length == 0)) {
+        return;
+    }
+
+    if (!checkNumber(form.payments, 1, 1200, "# of payments") ||
+        !checkNumber(form.interest, .001, 99, "Interest") ||
+        !checkNumber(form.loanBalance, 1, 10000000, "Principal")) {
+        form.monthlypay.value = "Invalid";
+        return;
+    }
+
+    var i = form.interest.value;
+    if (i > 1.0) {
+        i = i / 100.0;
+        form.interest.value = i;
+    }
+    i /= 12;
+
+    var pow = 1;
+    for (var j = 0; j < form.payments.value; j++)
+        pow = pow * (1 + i);
+    form.monthlypay.value = Math.floor( 100 * (form.loanBalance.value * pow * i) / (pow - 1))/100
+}
+
+function detailForm(form)
+{
+    alert("Not Yet Implemented");
+}
+
+function clearForm(form)
+{
+    form.salePrice.value = "";
+    form.Down.value = "";
+    form.loanBalance.value = "";
+    form.payments.value = "";
+    form.monthlypay.value = "";
+    form.marginalInterestRate.value = "";
+    form.inflationRate.value = "";
+    form.interest.value = "";
+    form.cumInterest.value = "";
+    form.taxAdjInterest.value = "";
+    form.realPayments.value = "";
+    form.cumAdjPayments.value = "";
+    form.deftaxAdjInterest.value = "";;
+}
+
+<!-- done hiding from old browsers -->
+</SCRIPT>
+
+</HEAD>
+<BODY BODY BGCOLOR=WHITE TEXT="#000090" LINK="#900000" ALINK="#FFFF00" VLINK="#000000" onLoad = "ScrollMessage();">
+<H1>Mortgage Interest Calculator</H1>
+
+<FONT SIZE=3>
+Here is a <FONT COLOR="#0000FF"><i>cool</i></FONT> tool to let you 
+calculate how much your new house is going to cost you. 
+You can also use the tool to calculate your monthly payments for 
+your car but make sure that you put the <I>Marginal Percentage Rate</I> as <B>0</B>.
+Use <B><I>tab</B></I> to advance to the next field.
+<BR><BR>
+
+
+<CENTER>
+
+<FORM method=POST>
+<TABLE BORDER=4 CELLPADDING=2>
+<TR>
+<TD><DIV ALIGN=CENTER>Sale Price</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=salePrice SIZE=10 onChange=computeLoan(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Actual Price of new home/vehicle</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>% Down<br> Payment</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=Down  SIZE=10 onChange=computeLoan(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Percentage of down payment</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER><B>Loan Balance</B></DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=loanBalance  SIZE=10 onChange=computeLoan(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#900000">Actual Amount of Loan</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>Interest<br>Rate</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=interest  SIZE=10 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Interest Rate in Percentage</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>  # of<br>Payments</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=payments  SIZE=10 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Total Number of Payments</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER> <B>Monthly<br> payment</B></DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=monthlypay   SIZE=10 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#900000">Your Actual Monthly Payments</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER>Marginal <br>Tax % Rate</DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=marginalInterestRate  SIZE=10 onChange=computeField(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Your State+Federal Marginal <br>Tax Percentage</FONT></DIV></TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER> Inflation <br>%age </DIV></TD>
+<TD><INPUT TYPE=TEXT NAME=inflationRate  SIZE=10 onChange=computeAll(this)> </TD>
+<TD><DIV ALIGN=LEFT><FONT COLOR="#008800">Estimated Inflation Rate.</FONT></DIV></TD>
+</TR><TR>
+<th colspan="1"><FONT COLOR="#0000FF"><tt><INPUT TYPE="button" VALUE="Compute" onClick=computeForm(this.form)></tt></FONT>
+<th colspan="1"><FONT COLOR="#0000FF"><tt><INPUT TYPE="button" VALUE="Compute Detail" onClick=computeDetail(this.form)></tt></FONT>
+<th colspan="1"><FONT COLOR="#0000FF"><tt><INPUT TYPE="reset" VALUE="Reset" onClick=clearForm(this.form)></tt></FONT>
+</TR>
+</TR><TR>
+<TD></TD>
+<tr>
+<th colspan="3"><FONT COLOR="#FF0000"><tt>Summary</tt></FONT>
+</tr>
+<TD></TD>
+</TR><TR>
+</TR><TR>
+<TD><DIV ALIGN=CENTER> Total <br>Interest </DIV></TD>
+<TD><DIV ALIGN=CENTER> Total <br>Tax Adjusted <br>Interest </DIV></TD>
+<TD><DIV ALIGN=CENTER> Total <br> Tax Adjusted Interest<br>in Today's Dollars </DIV></TD>
+</TR><TR>
+<TD><INPUT TYPE=TEXT NAME=cumInterest  SIZE=10 onChange=computeForm(this)> </TD>
+<TD><INPUT TYPE=TEXT NAME=taxAdjInterest  SIZE=10 onChange=computeForm(this)> </TD>
+<TD><INPUT TYPE=TEXT NAME=deftaxAdjInterest  SIZE=20 onChange=computeForm(this)> </TD>
+</TR><TR>
+<TD><DIV ALIGN=CENTER> Total <br>Payments </DIV></TD>
+<TD><DIV ALIGN=CENTER> Total <br>Tax Adjusted <br>Payments </DIV></TD>
+<TD><DIV ALIGN=CENTER> Total <br>Tax Adjusted Payments<br>in Today's Dollars </DIV></TD>
+</TR><TR>
+<TD><INPUT TYPE=TEXT NAME=realPayments  SIZE=10 onChange=computeForm(this)> </TD>
+<TD><INPUT TYPE=TEXT NAME=taxAdjPayments  SIZE=10 onChange=computeForm(this)> </TD>
+<TD><INPUT TYPE=TEXT NAME=cumAdjPayments  SIZE=20 onChange=computeForm(this)> </TD>
+</TR><TR>
+</FORM>
+</TABLE>
+
+</CENTER>
+<hr>
+<FONT SIZE=3>
+If you have found this tool useful try the <BLINK><A HREF="mortgage.html">Mortgage Qualification Tool</A></BLINK> too.
+</FONT>
+
+</font>
+
+<hr>
+<h5> DISCLAIMER </h5>
+<CENTER>
+<TABLE>
+<TD ALIGN=CENTER>
+<FORM name="DisClaimer">
+<INPUT TYPE="text" name="Text" SIZE="55">
+</FORM>
+</TD>
+</TABLE>
+</CENTER>
+
+<hr>
+<h2>For comments and questions:</h2>
+<ul>
+<li> You may send e-mail to <A HREF=
+"mailto:sandeep@almaden.ibm.com">sandeep@almaden.ibm.com</A>
+</ul>
+<P>
+Last updated <!--webbot bot="Timestamp" S-Type="EDITED" S-Format="%B %d, %Y" startspan -->March 03, 2000<!--webbot bot="Timestamp" endspan i-checksum="16803" -->
+<br>
+
+<hr>
+
+<table border="0" cellpadding="0" cellspacing="10" width="100%">
+  <tr>
+    <td width="16%" bgcolor="#FFFFFF"><a href="http://www.almaden.ibm.com/cs/people/sandeep"><font size="2"
+    face="Arial"><strong>Home</strong></font></a></td>
+    <td width="16%" bgcolor="#FFFFFF"><a href="research.htm"><font
+    size="2" face="Arial"><strong>Research</strong></font></a></td>
+    <td width="17%" bgcolor="#FFFFFF"><a href="javascript.html"><font
+    size="2" face="Arial"><strong>JavaScript Tools</strong></font></a><font size="1"
+    face="Arial">.</font></td>
+  </tr>
+</table>
+
+</BODY>
+</HTML>
+
